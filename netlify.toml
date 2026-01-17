@@ -1,11 +1,9 @@
-HS0005# 1. Quy tắc Proxy cho API (Để giải quyết lỗi Mixed Content)
 [[redirects]]
   from = "/api/*"
   to = "http://haianhdev.site/:splat"
   status = 200
   force = true
 
-# 2. Quy tắc cho React Router (Để giải quyết lỗi 404 khi refresh trang)
 [[redirects]]
   from = "/*"
   to = "/index.html"
