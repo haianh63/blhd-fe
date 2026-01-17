@@ -1,3 +1,1 @@
-const BASE_URL = "http://haianhdev.site";
-
-export { BASE_URL };
+export const BASE_URL = "/api";
