@@ -1,6 +1,18 @@
-import { Heart, Frown, Meh, Smile, Laugh, Send } from "lucide-react";
+import { useState, useRef } from "react";
+import {
+  Heart,
+  Frown,
+  Meh,
+  Smile,
+  Laugh,
+  Send,
+  Upload,
+  X,
+  ImageIcon,
+  Video,
+  Mic,
+} from "lucide-react";
 import axios from "axios";
-import { useState } from "react";
 import { BASE_URL } from "../../utils";
 
 const MOOD_OPTIONS = [
@@ -41,11 +53,21 @@ const MOOD_OPTIONS = [
   },
 ];
 
+const ALLOWED_FILE_TYPES = {
+  image: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+  video: ["video/mp4", "video/webm", "video/quicktime"],
+  audio: ["audio/mpeg", "audio/wav", "audio/webm", "audio/ogg"],
+};
+
 export default function MoodCheckIn({ studentId }) {
   const [selectedMood, setSelectedMood] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const [mediaType, setMediaType] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const fileInputRef = useRef(null);
 
   const handleMoodSelect = (moodValue) => {
     setSelectedMood(moodValue);
@@ -53,20 +75,68 @@ export default function MoodCheckIn({ studentId }) {
     setSubmitMessage("");
   };
 
+  const getFileType = (file) => {
+    if (ALLOWED_FILE_TYPES.image.includes(file.type)) return "image";
+    if (ALLOWED_FILE_TYPES.video.includes(file.type)) return "video";
+    if (ALLOWED_FILE_TYPES.audio.includes(file.type)) return "audio";
+    return null;
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const type = getFileType(file);
+    if (!type) {
+      setSubmitMessage(
+        "✗ Định dạng tệp không được hỗ trợ. Hỗ trợ: ảnh, video, ghi âm.",
+      );
+      return;
+    }
+
+    setMediaFile(file);
+    setMediaType(type);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setMediaPreview(event.target?.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveMedia = () => {
+    setMediaFile(null);
+    setMediaPreview(null);
+    setMediaType(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async () => {
     if (selectedMood === null) return;
 
     setIsLoading(true);
     try {
-      await axios.post(`${BASE_URL}/submit-checkin/`, {
-        student_id: studentId,
-        mood_rating: selectedMood,
-        open_feedback: feedback || "",
+      const formData = new FormData();
+      formData.append("student_id", studentId);
+      formData.append("mood_rating", selectedMood.toString());
+      formData.append("open_feedback", feedback || "");
+
+      if (mediaFile) {
+        formData.append("media_file", mediaFile);
+      }
+
+      await axios.post(`${BASE_URL}/submit-checkin`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       setSubmitMessage("✓ Cảm ơn! Chúng tôi đã ghi nhận tâm trạng của bạn.");
       setSelectedMood(null);
       setFeedback("");
+      handleRemoveMedia();
 
       setTimeout(() => setSubmitMessage(""), 3000);
     } catch (error) {
@@ -127,20 +197,107 @@ export default function MoodCheckIn({ studentId }) {
       </div>
 
       {selectedMood !== null && (
-        <div className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300 bg-white p-5 rounded-xl border-2 border-teal-200 shadow-sm">
-          <label className="block text-sm font-semibold text-gray-800 mb-3">
-            Bạn muốn chia sẻ thêm gì không? (Tùy chọn)
-          </label>
-          <textarea
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder="Viết những gì đang làm bạn lo lắng, buồn vui, hay bất kỳ điều gì bạn muốn chia sẻ..."
-            className="w-full p-4 border-2 border-teal-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 text-base resize-none transition-all duration-200 bg-gradient-to-br from-white to-teal-50 placeholder:text-gray-400"
-            rows={5}
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            Tin nhắn của bạn được bảo mật và chỉ nhằm mục đích hỗ trợ.
-          </p>
+        <div className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+          {/* Text Feedback */}
+          <div className="bg-white p-5 rounded-xl border-2 border-teal-200 shadow-sm">
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
+              Bạn muốn chia sẻ thêm gì không? (Tùy chọn)
+            </label>
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Viết những gì đang làm bạn lo lắng, buồn vui, hay bất kỳ điều gì bạn muốn chia sẻ..."
+              className="w-full p-4 border-2 border-teal-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 text-base resize-none transition-all duration-200 bg-gradient-to-br from-white to-teal-50 placeholder:text-gray-400"
+              rows={4}
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Tin nhắn của bạn được bảo mật và chỉ nhằm mục đích hỗ trợ.
+            </p>
+          </div>
+
+          {/* Media Upload */}
+          <div className="bg-white p-5 rounded-xl border-2 border-teal-200 shadow-sm">
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
+              Thêm tệp đính kèm (Tùy chọn)
+            </label>
+            <p className="text-xs text-gray-600 mb-3">
+              Hỗ trợ: Ảnh (JPG, PNG), Video (MP4), Ghi âm (MP3, WAV)
+            </p>
+
+            {!mediaFile ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-teal-300 rounded-lg p-6 text-center cursor-pointer hover:bg-teal-50 hover:border-teal-400 transition-all duration-200"
+              >
+                <Upload className="w-8 h-8 text-teal-500 mx-auto mb-2" />
+                <p className="text-sm font-medium text-gray-700">
+                  Nhấp để chọn tệp hoặc kéo thả
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Ảnh, video hoặc ghi âm
+                </p>
+              </div>
+            ) : (
+              <div className="bg-teal-50 border-2 border-teal-200 rounded-lg p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  {mediaType === "image" && (
+                    <ImageIcon className="w-6 h-6 text-teal-600" />
+                  )}
+                  {mediaType === "video" && (
+                    <Video className="w-6 h-6 text-teal-600" />
+                  )}
+                  {mediaType === "audio" && (
+                    <Mic className="w-6 h-6 text-teal-600" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">
+                      {mediaFile.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {(mediaFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleRemoveMedia}
+                    className="p-1 hover:bg-red-100 rounded transition-colors duration-200"
+                  >
+                    <X className="w-5 h-5 text-red-500" />
+                  </button>
+                </div>
+
+                {/* Media Preview */}
+                {mediaType === "image" && mediaPreview && (
+                  <img
+                    src={mediaPreview || "/placeholder.svg"}
+                    alt="Preview"
+                    className="w-full max-h-40 object-cover rounded-lg"
+                  />
+                )}
+                {mediaType === "video" && mediaPreview && (
+                  <video
+                    src={mediaPreview}
+                    controls
+                    className="w-full max-h-40 rounded-lg"
+                  />
+                )}
+                {mediaType === "audio" && (
+                  <audio
+                    src={mediaPreview}
+                    controls
+                    className="w-full rounded-lg"
+                  />
+                )}
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              accept="image/*,video/*,audio/*"
+              className="hidden"
+            />
+          </div>
         </div>
       )}
 

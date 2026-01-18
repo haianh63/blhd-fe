@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { resetAuthCredential } from "../features/auth/AuthSlice";
 import { BASE_URL } from "../utils";
 import { TeacherRegisterForm } from "../components/teachers/teacher-register-form";
+import CheckInList from "../components/teachers/checkin-list";
 
 // Hàm fetch data tách rời
 const fetchStudents = async () => {
@@ -60,7 +61,7 @@ export default function TeacherPage() {
       result = result.filter(
         (s) =>
           s.full_name.toLowerCase().includes(searchLower) ||
-          s.student_id.toLowerCase().includes(searchLower)
+          s.student_id.toLowerCase().includes(searchLower),
       );
     }
     return result;
@@ -162,6 +163,13 @@ export default function TeacherPage() {
             icon={<UserPlus className="w-4 h-4" />}
             label="Tạo tài khoản giáo viên"
           />
+
+          <TabButton
+            active={activeTab === "checkins"}
+            onClick={() => setActiveTab("checkins")}
+            icon={<UserPlus className="w-4 h-4" />}
+            label="Tâm sự của học sinh"
+          />
         </nav>
 
         <main className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 min-h-[500px] overflow-hidden">
@@ -203,6 +211,8 @@ export default function TeacherPage() {
                 <TeacherRegisterForm />
               </div>
             )}
+
+            {activeTab === "checkins" && <CheckInList />}
           </div>
         </main>
       </div>
