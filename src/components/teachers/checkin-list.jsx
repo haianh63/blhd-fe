@@ -193,7 +193,7 @@ export default function CheckInList() {
                         {checkin.student_name}
                       </h3>
                       <span className="text-sm text-gray-600">
-                        ({checkin.student_id})
+                        ({checkin.student_id ? checkin.student_id : "Ẩn danh"})
                       </span>
                       <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2 py-1 rounded">
                         {checkin.class_id}

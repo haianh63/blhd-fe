@@ -109,6 +109,15 @@ export function LoginForm() {
             {mutation.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
+        <div className="mt-3 text-center">
+          Bạn muốn đổi mật khẩu ?{" "}
+          <span
+            className="text-blue-500 under underline hover:cursor-pointer hover:text-blue-700"
+            onClick={() => navigate("/change-password")}
+          >
+            Đổi mật khẩu
+          </span>
+        </div>
 
         {/* Info Text */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">

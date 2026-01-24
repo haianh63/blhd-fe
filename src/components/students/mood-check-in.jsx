@@ -11,6 +11,8 @@ import {
   ImageIcon,
   Video,
   Mic,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import axios from "axios";
 import { BASE_URL } from "../../utils";
@@ -67,6 +69,7 @@ export default function MoodCheckIn({ studentId }) {
   const [mediaType, setMediaType] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleMoodSelect = (moodValue) => {
@@ -119,7 +122,12 @@ export default function MoodCheckIn({ studentId }) {
     setIsLoading(true);
     try {
       const formData = new FormData();
-      formData.append("student_id", studentId);
+
+      // Chỉ thêm student_id nếu không phải ẩn danh
+      if (!isAnonymous) {
+        formData.append("student_id", studentId);
+      }
+
       formData.append("mood_rating", selectedMood.toString());
       formData.append("open_feedback", feedback || "");
 
@@ -137,6 +145,7 @@ export default function MoodCheckIn({ studentId }) {
       setSelectedMood(null);
       setFeedback("");
       handleRemoveMedia();
+      setIsAnonymous(false);
 
       setTimeout(() => setSubmitMessage(""), 3000);
     } catch (error) {
@@ -198,6 +207,41 @@ export default function MoodCheckIn({ studentId }) {
 
       {selectedMood !== null && (
         <div className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+          {/* Anonymous Toggle */}
+          <div className="bg-white p-4 rounded-xl border-2 border-teal-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {isAnonymous ? (
+                  <EyeOff className="w-5 h-5 text-teal-600" />
+                ) : (
+                  <Eye className="w-5 h-5 text-gray-400" />
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">
+                    Gửi ẩn danh
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {isAnonymous
+                      ? "Mã sinh viên sẽ không được gửi"
+                      : "Thông tin được ghi lại"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAnonymous(!isAnonymous)}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-all duration-300 ${
+                  isAnonymous ? "bg-teal-500" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-all duration-300 ${
+                    isAnonymous ? "translate-x-7" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
           {/* Text Feedback */}
           <div className="bg-white p-5 rounded-xl border-2 border-teal-200 shadow-sm">
             <label className="block text-sm font-semibold text-gray-800 mb-3">
